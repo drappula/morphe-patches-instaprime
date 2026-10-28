@@ -1,14 +1,13 @@
-group = "app.template"
+group = "app.instaprime"
 
 patches {
-    // TODO: Update this section with your project details.
     about {
-        name = "UserXYZ Patches"
-        description = "Patches for apps I like"
-        source = "git@github.com:UserXYZ/morphe-patches.git"
-        author = "Awesome dev"
+        name = "InstaPrime Patches"
+        description = "Patches for InstaPrime"
+        source = "git@github.com:drappula/morphe-patches-instaprime.git"
+        author = "drappula"
         contact = "na"
-        website = "na"
+        website = "https://github.com/drappula/morphe-patches-instaprime"
         license = "GPLv3"
     }
 }

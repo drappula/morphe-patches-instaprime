@@ -1,18 +1,16 @@
-# 👋🧩 Morphe Patches template
+# 👋🧩 InstaPrime Morphe Patches
 
-Template repository for Morphe Patches.
+Morphe patches for InstaPrime.
 
 ## ❓ About
 
-Patches for apps I like.
-
-<!-- TODO: Update this about section with a brief introduction/summary about this repo and what it offers. -->
+Patches for [InstaPrime](https://instaprimeofficial.com/) (`com.instaprime.android`).
 
 ### How to use these patches
 
-Click the button below, or manually add this repo url to Morphe Manager: https://github.com/xyz-user/xyz-patches
+Click the button below, or manually add this repo url to Morphe Manager: https://github.com/drappula/morphe-patches-instaprime
 
-<a href="https://morphe.software/add-source?github=xyz-user/xyz-patches">
+<a href="https://morphe.software/add-source?github=drappula/morphe-patches-instaprime">
   <img src=".github/assets/add-to-morphe.svg" alt="Add to Morphe" height="48">
 </a>
 
@@ -100,4 +98,4 @@ See the [Morphe documentation](https://github.com/MorpheApp/morphe-documentation
 
 ## 📜 License
 
-UserXYZ Patches are licensed under the [GNU General Public License v3.0](LICENSE)
+InstaPrime Patches are licensed under the [GNU General Public License v3.0](LICENSE)
