@@ -46,6 +46,20 @@ private const val NOT_PREMIUM_TITLE_IMM16 = 0x39E8
 /** AArch64 `nop`. Replaces the premium-tab gate so it can never branch to the NOT premium title. */
 private const val AARCH64_NOP = 0xD503201F.toInt()
 
+/** AArch64 `ret`. Replaces the prologue of the get-premium dialog so it can never be shown. */
+private const val AARCH64_RET = 0xD65F03C0.toInt()
+
+/**
+ * `movk xN, #0xa45d, lsl #32` — a string id that resolves to `not_premium_user_title`
+ * ("You're NOT Premium User"). `SubscriptionManager.getPremium(Context)` builds this id to show the
+ * dialog that premium-gated features open when the subscription reports inactive, so it identifies
+ * that function independently of library layout.
+ */
+private const val NOT_PREMIUM_DIALOG_IMM16 = 0xA45D
+
+/** AArch64 `sub sp, sp, #0x100`, the prologue of `getPremium`. */
+private const val SUB_SP_0x100 = 0xD10403FF.toInt()
+
 /** `b.le` — B.cond with condition LE. */
 private const val B_LE = 0x5400000D
 private const val B_LE_MASK = 0xFF00001F.toInt()
@@ -111,6 +125,26 @@ val unlockPremiumPatch = rawResourcePatch(
             )
 
         patchWord(library, tabGateOffset, AARCH64_NOP)
+
+        // `SubscriptionManager.getPremium(Context)` shows the "You're NOT Premium User" dialog
+        // that premium-gated features open when the subscription reports inactive. It builds the
+        // `not_premium_user_title` string id (this one time in the binary) and its prologue is
+        // `sub sp, sp, #0x100`. Replacing the prologue with `ret` shows no dialog while features
+        // continue past the dialog call.
+        val dialogKeyOffsets = findMovkImm32Instructions(library, NOT_PREMIUM_DIALOG_IMM16)
+        val dialogKeyOffset = dialogKeyOffsets.singleOrNull()
+            ?: throw PatchException(
+                "Expected exactly one premium dialog builder in $PRIMEMODS_LIBRARY, " +
+                    "found ${dialogKeyOffsets.size}. The app version is not supported."
+            )
+
+        val dialogEntryOffset = findDialogEntry(library, dialogKeyOffset)
+            ?: throw PatchException(
+                "Could not locate the premium dialog entry in $PRIMEMODS_LIBRARY. " +
+                    "The app version is not supported."
+            )
+
+        patchWord(library, dialogEntryOffset, AARCH64_RET)
     }
 }
 
@@ -198,6 +232,33 @@ private fun branchTarget(address: Long, word: Int): Long {
         imm19 -= 0x80000
     }
     return address + (imm19 shl 2)
+}
+
+/**
+ * Finds the `sub sp, sp, #0x100` that starts `getPremium`, looking a short distance before the
+ * `not_premium_user_title` key construction at [dialogKeyOffset].
+ */
+private fun findDialogEntry(library: File, dialogKeyOffset: Long): Long? {
+    val start = maxOf(0L, dialogKeyOffset - MAX_TAB_GATE_DISTANCE)
+    val buffer = ByteArray((dialogKeyOffset - start).toInt())
+
+    RandomAccessFile(library, "r").use { file ->
+        file.seek(start)
+        val read = file.read(buffer)
+        if (read < 4) return null
+
+        var candidate: Long? = null
+        var index = 0
+        while (index + 4 <= read) {
+            if (readWord(buffer, index) == SUB_SP_0x100) {
+                // Take the closest prologue before the key construction.
+                candidate = start + index
+            }
+            index += 4
+        }
+
+        return candidate
+    }
 }
 
 /**
